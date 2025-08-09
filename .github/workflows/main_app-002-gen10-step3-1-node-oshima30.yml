@@ -13,19 +13,21 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install deps
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: |
+          export NODE_OPTIONS="--max_old_space_size=2048"
+          npm run build
 
       - name: Prepare deploy folder
         run: |
           rm -rf deploy
           mkdir -p deploy
-          # 必須3点セット
           cp -r .next/standalone deploy/
           cp -r .next/static deploy/.next/static
           if [ -d public ]; then cp -r public deploy/public; fi
