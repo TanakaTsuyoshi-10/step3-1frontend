@@ -1,4 +1,4 @@
-name: Deploy Next.js (standalone) to Azure Web App
+name: Build and deploy Next.js (App Service / Oryx)
 
 on:
   push:
@@ -8,60 +8,38 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Check out repo
         uses: actions/checkout@v4
 
-      - name: Use Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'    # Azure の Node 22 と合わせる
-          cache: 'npm'
-
-      - name: Install deps
-        run: npm ci
-
-      - name: Build (Next standalone)
-        run: npm run build
-
-      - name: Prepare deploy folder
+      # ここではローカルビルドは行いません（Oryx がサーバ側で実行）
+      # ソース一式を Zip 化して渡します
+      - name: Create deploy package (source)
         run: |
-          rm -rf deploy
-          mkdir -p deploy
-          # standalone の本体（server.js 等）
-          cp -r .next/standalone/* deploy/
-          # 必須: 静的アセット
-          mkdir -p deploy/.next
-          cp -r .next/static deploy/.next/static
-          # あれば public も
-          if [ -d public ]; then cp -r public deploy/public; fi
-          # 念のため package.json / lock も置いておく（App Service が使う場合あり）
-          cp package.json deploy/package.json
-          if [ -f package-lock.json ]; then cp package-lock.json deploy/package-lock.json; fi
+          zip -r app.zip . -x ".git/*"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: next-standalone
-          path: deploy
+          name: nextjs-src
+          path: app.zip
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
+
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: next-standalone
+          name: nextjs-src
           path: .
 
-      - name: Zip for Azure
-        run: zip -r app.zip .
-
-      - name: Deploy to Azure Web App
+      - name: Deploy to Azure Web App (App Service)
         uses: azure/webapps-deploy@v3
         with:
-          app-name: app-002-gen10-step3-1-node-oshima30   # あなたの Web App 名
+          app-name: app-002-gen10-step3-1-node-oshima30   # ← あなたの Web App 名
           slot-name: Production
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_B47337E9A3FD479480DDAF997372638B }}
           package: app.zip
