@@ -1,14 +1,9 @@
-// サーバー専用
-import 'server-only';
-
-export const dynamic = 'force-dynamic';
-
 export default async function fetchCustomer(id) {
   const url = `/api/customers?customer_id=${encodeURIComponent(id)}`;
 
   const res = await fetch(url, {
     cache: 'no-store',
-    next: { revalidate: 0 },
+    // クライアント／サーバどちらでも動作OK
   });
 
   if (!res.ok) {
