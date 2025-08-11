@@ -1,15 +1,19 @@
+// サーバー専用
+import 'server-only';
+
+export const dynamic = 'force-dynamic';
+
 export default async function fetchCustomer(id) {
-  const endpoint = process.env.NEXT_PUBLIC_API_ENDPOINT || "http://localhost:8000";
-  try {
-    const res = await fetch(`${endpoint}/customers?customer_id=${id}`, {
-      cache: "no-cache",
-    });
-    if (!res.ok) {
-      throw new Error("Failed to fetch customer");
-    }
-    return await res.json();
-  } catch (error) {
-    console.error(error);
-    return null;
+  const url = `/api/customers?customer_id=${encodeURIComponent(id)}`;
+
+  const res = await fetch(url, {
+    cache: 'no-store',
+    next: { revalidate: 0 },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Failed to fetch customer ${id}: ${res.status} ${text}`);
   }
+  return res.json();
 }
