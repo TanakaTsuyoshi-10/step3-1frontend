@@ -1,10 +1,11 @@
 export default async function fetchCustomer(id) {
-  const res = await fetch(
-    process.env.NEXT_PUBLIC_API_ENDPOINT + `/customers?customer_id=${id}`,
-    { cache: "no-cache" }
-  );
+  const url = `/api/customers?customer_id=${encodeURIComponent(id)}`;
+
+  const res = await fetch(url, { cache: 'no-store' });
+
   if (!res.ok) {
-    throw new Error("Failed to fetch customer");
+    const text = await res.text().catch(() => '');
+    throw new Error(`Failed to fetch customer ${id}: ${res.status} ${text}`);
   }
   return res.json();
 }
